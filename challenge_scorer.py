@@ -52,10 +52,16 @@ class ChallengeScorer(_BaseScorer):
         if len(clf.coef_) > 1:
             raise AssertionError("The coef size should be 1")
 
+        print(clf.coef_[0])
+
         mix_matrix = self.mix_matrix_factory_.create_partial_mix_matrix(clf.coef_[0])
 
         # We should only keep the first order features because the 2 second order features
         # Will be included using the mix matrix
         X = X[:, :len(self.combination_indices_)]
+
+        # Cross validation of LogisticRegression from sklearn replaces the 0 y value by -1
+        # We have to inverse that for our score function to work
+        y[y == -1] = 0
 
         return self.score(X, y, mix_matrix)

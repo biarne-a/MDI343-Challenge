@@ -122,23 +122,25 @@ def get_X_from_combination(X_trn, combination_indices):
     return add_quadratic_features(X_trn, combi_train, combination_indices)
 
 
-def test_combination(combination, X_trn, y_trn):
+def test_combination(combination, X_trn, y_trn, with_cv):
     print("Testing combination " + str(combination))
 
     combination_indices = np.array(combination)
     X_trn_polynomial = get_X_from_combination(X_trn, combination_indices)
 
     scorer = ChallengeScorer(combination_indices)
-    # clf = LogisticRegressionCV(cv=2, Cs=[1.0], refit=False, scoring=scorer)
-
-    clf = LogisticRegression()
+    if with_cv:
+        clf = LogisticRegressionCV(cv=10, Cs=10, refit=False, scoring=scorer, solver='liblinear')
+    else:
+        clf = LogisticRegression()
     clf.fit(X_trn_polynomial, y_trn)
 
     mix_matrix_factory = MixMatrixFactory(combination_indices)
     mix_matrix = mix_matrix_factory.create_full_mix_matrix(clf.coef_[0])
 
     frr = scorer.score(X_trn, y_trn, mix_matrix)
-    print("frr for combination = " + str(frr))
+    print("frr = " + str(frr))
+    print("coef = " + str(clf.coef_[0]))
 
     return mix_matrix
 
@@ -166,10 +168,10 @@ def save_best_combinations():
         np.savetxt('M_pred_' + str(i) + '.txt', M, fmt='%f')
 
 
-def save_combinations(combinations):
+def save_combinations(combinations, with_cv):
     X_trn, y_trn = load_binary_data()
     for i, combination in enumerate(combinations):
-        mix_matrix = test_combination(combination, X_trn, y_trn)
+        mix_matrix = test_combination(combination, X_trn, y_trn, with_cv)
         np.savetxt('M_pred_' + str(i) + '.txt', mix_matrix, fmt='%10.20f')
 
 
@@ -184,6 +186,17 @@ def build_combination_from_previous_run(previous_run):
 
 
 # combinations = build_combination_from_previous_run("Predictions_31_01")
-save_combinations([[7, 8, 11, 12]])
+save_combinations([
+[7 8 11 12],
+[7 8 11 13],
+[6 8 11 13],
+[2 8 10 13],
+[7 8 10 13],
+[8 11 12],
+[8 10 13],
+[7 8 11],
+[8 11 13],
+[6 8 11]
+], True)
 # save_combinations([[0, 8, 10, 12]])
 
